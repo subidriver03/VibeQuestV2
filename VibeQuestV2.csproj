@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UserSecretsId>aspnet-VibeQuestV2-b5f463c8-6b06-4e65-90ff-93eac93c80da</UserSecretsId>
   </PropertyGroup>
 
