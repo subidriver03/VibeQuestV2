@@ -1,0 +1,13 @@
+@page "/Host"
+@namespace VibeQuest.UI.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>VibeQuest</title>
+</head>
+<body>
+    <app>@await Html.RenderComponentAsync<App>(RenderMode.ServerPrerendered)</app>
+</body>
+</html>

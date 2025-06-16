@@ -1,0 +1,38 @@
+@page "/dashboard"
+@inject IProfileService ProfileService
+@inject IQuestService QuestService
+@inject IJournalService JournalService
+
+<h3>XP Dashboard</h3>
+<p>XP: @profile.Experience</p>
+<p>Streak: @profile.Streak</p>
+<p>HeroCoins: @profile.HeroCoins</p>
+
+<h4>Quests</h4>
+<ul>
+@foreach(var quest in quests)
+{
+    <li>@quest.Title - @quest.Description</li>
+}
+</ul>
+
+<h4>Journal</h4>
+<ul>
+@foreach(var entry in entries)
+{
+    <li>@entry.Timestamp: @entry.Text</li>
+}
+</ul>
+
+@code {
+    private HeroProfile profile = new();
+    private IEnumerable<Quest> quests = Array.Empty<Quest>();
+    private IEnumerable<JournalEntry> entries = Array.Empty<JournalEntry>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        profile = await ProfileService.GetProfileAsync("demo");
+        quests = await QuestService.GetQuestsAsync("demo");
+        entries = await JournalService.GetEntriesAsync("demo");
+    }
+}

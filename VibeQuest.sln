@@ -1,0 +1,13 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VibeQuest.Core", "Core/VibeQuest.Core.csproj", "{00000000-0000-0000-0000-000000000001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VibeQuest.Infrastructure", "Infrastructure/VibeQuest.Infrastructure.csproj", "{00000000-0000-0000-0000-000000000002}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VibeQuest.UI", "UI/VibeQuest.UI.csproj", "{00000000-0000-0000-0000-000000000003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VibeQuest.Tests", "Tests/VibeQuest.Tests.csproj", "{00000000-0000-0000-0000-000000000004}"
+EndProject
+Global
+EndGlobal
