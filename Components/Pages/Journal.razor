@@ -1,0 +1,69 @@
+﻿@page "/journal"
+@inject TaskService TaskService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Identity
+@using VibeQuestV2.Data
+
+<h3>📓 Journal</h3>
+<hr />
+
+<div class="mb-3">
+    <textarea class="form-control" @bind="journalText" placeholder="Write your thoughts..." rows="5"></textarea>
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="SubmitEntry">Submit Entry</button>
+</div>
+
+@if (entries != null && entries.Count > 0)
+{
+    <h5>Past Entries</h5>
+    <ul class="list-group">
+        @foreach (var entry in entries.OrderByDescending(e => e.Timestamp))
+        {
+            <li class="list-group-item">
+                <small class="text-muted">@entry.Timestamp.ToString("g")</small><br />
+                @entry.Text
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p><em>No entries yet. Start journaling!</em></p>
+}
+
+@code {
+    private string journalText = string.Empty;
+    private string? userId;
+    private List<JournalEntry> entries = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+        if (user != null)
+        {
+            userId = user.Id;
+            entries = await TaskService.GetJournalEntriesAsync(userId);
+        }
+    }
+
+    private async Task SubmitEntry()
+    {
+        if (string.IsNullOrWhiteSpace(journalText) || userId == null)
+            return;
+
+        var entry = new JournalEntry
+        {
+            Text = journalText,
+            ApplicationUserId = userId
+        };
+
+        await TaskService.AddJournalEntryAsync(entry, userId);
+        journalText = string.Empty;
+
+        entries = await TaskService.GetJournalEntriesAsync(userId);
+    }
+}

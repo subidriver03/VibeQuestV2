@@ -1,0 +1,72 @@
+﻿@page "/profile"
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ApplicationDbContext DbContext
+
+@using Microsoft.AspNetCore.Identity
+@using VibeQuestV2.Data
+@using Microsoft.EntityFrameworkCore
+
+<h3>👤 Profile</h3>
+<hr />
+
+@if (user != null && skillProgress != null)
+{
+    <div class="card p-3 shadow-sm text-center">
+        <img src="@user.AvatarUrl" width="120" class="rounded-circle mb-3 border border-secondary" />
+        <h4>@user.HeroName</h4>
+        <h6 class="text-muted">@user.HeroClass</h6>
+        <p class="text-muted">Member since @user.CreationDate.ToString("MMMM dd, yyyy")</p>
+
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>Skill</th>
+                    <th>XP</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>🧠 Mind</td><td>@skillProgress.Mind</td></tr>
+                <tr><td>💪 Body</td><td>@skillProgress.Body</td></tr>
+                <tr><td>🎨 Creativity</td><td>@skillProgress.Creativity</td></tr>
+                <tr><td>🎯 Focus</td><td>@skillProgress.Focus</td></tr>
+                <tr class="table-info"><td><strong>Total XP</strong></td><td><strong>@skillProgress.TotalXP</strong></td></tr>
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <p><em>Loading profile data...</em></p>
+}
+
+@code {
+    private ApplicationUser? user;
+    private SkillProgress? skillProgress;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        user = await UserManager.GetUserAsync(authState.User);
+       
+        Console.WriteLine($"[PROFILE DEBUG] Avatar: {user?.AvatarUrl}, Class: {user?.HeroClass}");
+
+        if (user != null)
+        {
+            skillProgress = await DbContext.SkillProgresses
+                .FirstOrDefaultAsync(s => s.ApplicationUserId == user.Id);
+
+            if (skillProgress == null)
+            {
+                skillProgress = new SkillProgress
+                {
+                    ApplicationUserId = user.Id
+                };
+
+                DbContext.SkillProgresses.Add(skillProgress);
+                await DbContext.SaveChangesAsync();
+            }
+        }
+    }
+
+}

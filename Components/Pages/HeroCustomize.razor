@@ -1,0 +1,168 @@
+﻿@page "/hero"
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@using VibeQuestV2.Data
+
+<h3>🎨 Customize Your Hero</h3>
+<hr />
+
+@if (user != null)
+{
+    <div class="mb-3">
+    <label class="form-label">Select a Hero Class:</label>
+    <select class="form-select"
+            @bind-Value="selectedHeroClass"
+            @bind-Value:event="onchange">
+        <option value="">-- Select Class --</option>
+        <option value="Mind Mage">🧠 Mind Mage</option>
+        <option value="Body Warrior">💪 Body Warrior</option>
+        <option value="Creative Spirit">🎨 Creative Spirit</option>
+        <option value="Focus Ranger">🎯 Focus Ranger</option>
+    </select>
+</div>
+
+
+
+    <div class="mb-3">
+        <label class="form-label">Select an Avatar:</label>
+        <div class="d-flex flex-wrap">
+            @foreach (var avatar in avatarOptions)
+            {
+                <button type="button"
+                        class="avatar-wrapper btn p-0 m-2 @(IsSelectedAvatar(avatar))"
+                        @onclick="() => SelectAvatar(avatar)">
+                    <img src="@avatar" class="avatar-option" alt="Avatar" />
+                </button>
+            }
+        </div>
+    </div>
+
+    <button class="btn btn-outline-success mt-2"
+            @onclick="SaveChanges"
+            disabled="@(!canSave)">
+        Save
+    </button>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert @messageClass mt-3" role="alert">
+            @message
+        </div>
+    }
+}
+else
+{
+    <p><em>Loading hero data...</em></p>
+}
+
+@code {
+    private ApplicationUser? user;
+
+    private string _selectedHeroClass = "";
+    private string selectedHeroClass
+    {
+        get => _selectedHeroClass;
+        set
+        {
+            if (_selectedHeroClass != value)
+            {
+                _selectedHeroClass = value;
+                CheckForChanges();
+            }
+        }
+    }
+    private string originalAvatar = "";
+    private string originalHeroClass = "";
+
+    private bool canSave = false;
+    private string? message;
+    private string messageClass = "alert-success";
+
+    private List<string> avatarOptions = new()
+    {
+        "/images/avatars/avatar1.jpeg",
+        "/images/avatars/avatar2.jpeg",
+        "/images/avatars/avatar3.jpeg",
+        "/images/avatars/avatar4.jpeg"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        user = await UserManager.GetUserAsync(authState.User);
+
+        if (user is not null)
+        {
+            originalAvatar = Normalize(user.AvatarUrl);
+            originalHeroClass = user.HeroClass ?? "";
+            selectedHeroClass = user.HeroClass ?? "";
+        }
+    }
+
+    private void SelectAvatar(string avatar)
+    {
+        if (user is null) return;
+
+        user.AvatarUrl = avatar;
+        CheckForChanges();
+    }
+
+    private void CheckForChanges()
+    {
+        if (user is null) return;
+
+        var currentAvatar = Normalize(user.AvatarUrl);
+        canSave = currentAvatar != originalAvatar || selectedHeroClass != originalHeroClass;
+
+        StateHasChanged(); // 🔥 ensures UI updates immediately
+        Console.WriteLine($"CheckForChanges triggered — canSave: {canSave}");
+
+    }
+
+    private async Task SaveChanges()
+    {
+        if (user is not null)
+        {
+            user.HeroClass = selectedHeroClass;
+
+            var result = await UserManager.UpdateAsync(user);
+            if (result.Succeeded)
+            {
+                // Force reload to ensure save
+                originalAvatar = Normalize(user.AvatarUrl);
+                originalHeroClass = selectedHeroClass;
+                message = "✅ Profile updated successfully!";
+                messageClass = "alert-success";
+
+                Console.WriteLine($"[DEBUG] Avatar: {user.AvatarUrl}, HeroClass: {user.HeroClass}");
+            }
+            else
+            {
+                message = "❌ Failed to update profile.";
+                messageClass = "alert-danger";
+            }
+            dotnet sln add VibeQuest.Core / VibeQuest.Core.csproj
+dotnet sln add VibeQuest.Infrastructure / VibeQuest.Infrastructure.csproj
+dotnet sln add VibeQuest.UI / VibeQuest.UI.csproj
+dotnet sln add VibeQuest.Tests / VibeQuest.Tests.csproj
+
+dotnet add VibeQuest.Infrastructure reference VibeQuest.Core
+dotnet add VibeQuest.UI reference VibeQuest.Core
+dotnet add VibeQuest.UI reference VibeQuest.Infrastructure
+dotnet add VibeQuest.Tests reference VibeQuest.Core
+
+            Console.WriteLine($"SaveChanges triggered — HeroClass: {selectedHeroClass}, Avatar: {user?.AvatarUrl}");
+
+            StateHasChanged();
+        }
+    }
+
+    private string Normalize(string? input) =>
+        input?.Trim().ToLowerInvariant() ?? "";
+
+    private string IsSelectedAvatar(string avatar)
+    {
+        return Normalize(user?.AvatarUrl) == Normalize(avatar) ? "selected" : "";
+    }
+}
+

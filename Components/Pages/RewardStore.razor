@@ -1,0 +1,96 @@
+﻿@page "/rewards"
+@inject TaskService TaskService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ApplicationDbContext DbContext
+@using Microsoft.AspNetCore.Identity
+@using VibeQuestV2.Data
+@using Microsoft.EntityFrameworkCore
+
+<h3>🎁 Reward Store</h3>
+<hr />
+
+@if (skillProgress != null)
+{
+    <p><strong>Total XP Available:</strong> @skillProgress.TotalXP</p>
+
+    <ul class="list-group">
+        @foreach (var reward in rewards)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>@reward.Name</strong><br />
+                    <small class="text-muted">Cost: @reward.XPCost XP</small>
+                </div>
+                <button class="btn btn-sm btn-success"
+                        @onclick="() => TryPurchaseReward(reward)"
+                        disabled="@(!CanAfford(reward))">
+                    Redeem
+                </button>
+            </li>
+        }
+    </ul>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="alert alert-info mt-3">@statusMessage</div>
+    }
+}
+else
+{
+    <p><em>Loading rewards and XP...</em></p>
+}
+
+@code {
+    private SkillProgress? skillProgress;
+    private string? userId;
+    private string statusMessage = string.Empty;
+
+    private List<RewardOption> rewards = new()
+    {
+        new RewardOption { Name = "Take a Break ☕", XPCost = 50 },
+        new RewardOption { Name = "Watch a Show 🎬", XPCost = 100 },
+        new RewardOption { Name = "Buy Yourself a Snack 🍩", XPCost = 150 },
+        new RewardOption { Name = "Treat Yourself 💎", XPCost = 300 }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+        if (user != null)
+        {
+            userId = user.Id;
+            skillProgress = await DbContext.SkillProgresses.FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
+        }
+    }
+
+    private async Task TryPurchaseReward(RewardOption reward)
+    {
+        statusMessage = string.Empty;
+
+        if (userId == null || skillProgress == null)
+            return;
+
+        bool success = await TaskService.SpendXPAsync(userId, reward.XPCost);
+
+        if (success)
+        {
+            skillProgress = await DbContext.SkillProgresses.FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
+            statusMessage = $"✅ Reward unlocked: {reward.Name}!";
+        }
+        else
+        {
+            statusMessage = "❌ Not enough XP!";
+        }
+    }
+
+    private bool CanAfford(RewardOption reward) =>
+        skillProgress != null && skillProgress.TotalXP >= reward.XPCost;
+
+    public class RewardOption
+    {
+        public string Name { get; set; } = string.Empty;
+        public int XPCost { get; set; }
+    }
+}

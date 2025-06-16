@@ -1,0 +1,74 @@
+﻿@page "/xp"
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ApplicationDbContext DbContext
+@using Microsoft.AspNetCore.Identity
+@using VibeQuestV2.Data
+@using Microsoft.EntityFrameworkCore
+
+<h3>📊 Your XP Dashboard</h3>
+<hr />
+
+@if (skillProgress != null)
+{
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <strong>Mind:</strong> @skillProgress.Mind XP
+            <div class="progress">
+                <div class="progress-bar bg-info" role="progressbar" style="width: @GetPercentage(skillProgress.Mind)%">
+                    @GetPercentage(skillProgress.Mind)%
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>Body:</strong> @skillProgress.Body XP
+            <div class="progress">
+                <div class="progress-bar bg-success" role="progressbar" style="width: @GetPercentage(skillProgress.Body)%">
+                    @GetPercentage(skillProgress.Body)%
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>Creativity:</strong> @skillProgress.Creativity XP
+            <div class="progress">
+                <div class="progress-bar bg-warning" role="progressbar" style="width: @GetPercentage(skillProgress.Creativity)%">
+                    @GetPercentage(skillProgress.Creativity)%
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <strong>Focus:</strong> @skillProgress.Focus XP
+            <div class="progress">
+                <div class="progress-bar bg-danger" role="progressbar" style="width: @GetPercentage(skillProgress.Focus)%">
+                    @GetPercentage(skillProgress.Focus)%
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p><em>Loading XP stats...</em></p>
+}
+
+@code {
+    private SkillProgress? skillProgress;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+
+        if (user != null)
+        {
+            skillProgress = await DbContext.SkillProgresses
+                .FirstOrDefaultAsync(s => s.ApplicationUserId == user.Id);
+        }
+    }
+
+    private int GetPercentage(int xp)
+    {
+        const int max = 1000; // change if you want a dynamic scale
+        return Math.Min((xp * 100) / max, 100);
+    }
+}

@@ -1,0 +1,87 @@
+﻿@page "/taskboard"
+@inject TaskService TaskService
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+
+@using VibeQuestV2.Data
+@using Microsoft.AspNetCore.Identity
+
+<h3>🧾 Task Board</h3>
+
+<hr />
+
+<!-- New Task Form -->
+<div class="mb-4">
+    <h5>Create a New Task</h5>
+    <input @bind="newTask.Title" placeholder="Task Title" class="form-control mb-2" />
+    <input @bind="newTask.SkillCategory" placeholder="Skill Category (Mind/Body/etc)" class="form-control mb-2" />
+    <input @bind="newTask.Difficulty" type="number" min="1" max="5" class="form-control mb-2" placeholder="Difficulty (1-5)" />
+    <button @onclick="AddTaskAsync" class="btn btn-primary">Add Task</button>
+</div>
+
+<!-- Task List -->
+@if (tasks.Count == 0)
+{
+    <p><em>No tasks yet. Create one!</em></p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var task in tasks)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                    <strong>@task.Title</strong> (XP: @task.XP, Skill: @task.SkillCategory)
+                    @if (task.IsCompleted)
+                    {
+                        <span class="badge bg-success ms-2">✔ Completed</span>
+                    }
+                </span>
+                @if (!task.IsCompleted)
+                {
+                    <button class="btn btn-sm btn-success" @onclick="() => CompleteTaskAsync(task.Id)">Complete</button>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private List<QuestTask> tasks = new();
+    private QuestTask newTask = new();
+
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = await UserManager.GetUserAsync(authState.User);
+        if (user != null)
+        {
+            userId = user.Id;
+            tasks = await TaskService.GetTasksAsync(userId);
+        }
+    }
+
+    private async Task AddTaskAsync()
+    {
+        if (userId == null) return;
+
+        newTask.ApplicationUserId = userId;
+        newTask.CreatedAt = DateTime.Now;
+
+        await TaskService.AddTaskAsync(newTask);
+        newTask = new QuestTask(); // reset form
+        tasks = await TaskService.GetTasksAsync(userId);
+    }
+
+    private async Task CompleteTaskAsync(int taskId)
+    {
+        if (userId == null) return;
+
+        await TaskService.CompleteTaskAsync(taskId, userId);
+        tasks = await TaskService.GetTasksAsync(userId);
+    }
+}
