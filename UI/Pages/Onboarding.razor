@@ -1,0 +1,32 @@
+@page "/onboarding"
+@inject IProfileService ProfileService
+
+<h3>Onboarding - Step @step</h3>
+
+@if(step == 1)
+{
+    <input @bind="profile.HeroName" placeholder="Hero name" />
+    <button @onclick="Next">Next</button>
+}
+else if(step == 2)
+{
+    <input type="file" @onchange="UploadAvatar" />
+    <button @onclick="Finish">Finish</button>
+}
+
+@code {
+    private int step = 1;
+    private HeroProfile profile = new();
+
+    void Next() => step++;
+
+    async Task UploadAvatar(ChangeEventArgs e)
+    {
+        // Placeholder for avatar upload
+    }
+
+    async Task Finish()
+    {
+        await ProfileService.UpdateProfileAsync(profile);
+    }
+}
